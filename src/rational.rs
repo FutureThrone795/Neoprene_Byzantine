@@ -101,6 +101,10 @@ impl Rational {
         return a;
     }
 
+    pub fn new_usize(sign: Sign, numer: usize, denom: usize) -> Rational {
+        return Rational::new(sign, BigUint::from(numer), BigUint::from(denom));
+    }
+
     pub fn simplify(&mut self) {
         let gcd = gcd(&self.numer, &self.denom);
 
@@ -113,6 +117,21 @@ impl Rational {
             panic!("Rational with zero denominator detected in simplify function");
         }
     }
+
+    pub fn is_zero(&self) -> bool {
+        return self.numer == BigUint::ZERO;
+    }
+    pub fn zero() -> Rational {
+        return Rational::from(0);
+    }
+
+    pub fn is_one(&self) -> bool {
+        return self.numer != BigUint::ZERO && self.numer == self.denom;
+    }
+    pub fn one() -> Rational {
+        return Rational::from(1);
+    }
+
 
     pub fn negate(&mut self) {
         self.sign = !self.sign;
@@ -140,12 +159,24 @@ impl Rational {
         // (Consider that their prime factorizations will still contain the same prime bases after the operation)
     }
 
+    pub fn is_simplified(&self) -> bool {
+        return gcd(&self.numer, &self.denom) == BigUint::from(1 as u8);
+    }
+
+    pub fn is_negative(&self) -> bool {
+        return !self.is_zero() && matches!(self.sign, Sign::Neg);
+    }
+
     pub fn is_int(&self) -> bool {
         if self.denom == BigUint::from(1 as u8) {
             return true;
         }
 
         return gcd(&self.numer, &self.denom) == self.denom;
+    }
+
+    pub fn is_denom_odd(&self) -> bool {
+        return self.denom.bit(0);
     }
 
     pub fn is_int_assume_simplified(&self) -> bool {
@@ -156,7 +187,19 @@ impl Rational {
 impl Debug for Rational {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> 
     { 
-        return write!(f, "({:?}{}/{})", self.sign, self.numer, self.denom);
+        let a = match self.sign {
+            Sign::Pos => {
+                ""
+            },
+            Sign::Neg => {
+                "-"
+            }
+        };
+
+        if self.denom == BigUint::from(1 as u8) {
+            return write!(f, "{}{}", a, self.numer);
+        }
+        return write!(f, "{}{}/{}", a, self.numer, self.denom);
     }
 }
 
@@ -346,9 +389,4 @@ impl From<isize> for Rational {
             denom: BigUint::from(1 as u8) 
         } 
     }
-}
-
-struct RationalRange {
-    min: Rational,
-    max: Rational
 }

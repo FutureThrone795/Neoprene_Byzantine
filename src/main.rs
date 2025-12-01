@@ -1,25 +1,37 @@
 mod rational;
+mod rational_range;
 mod byzantine;
-mod byz_node_sorted_vec;
-mod byz_node_mul_vec;
+mod byznode_sorted_vec;
+mod generate_byznode_utils;
 mod neoprene;
 
-use num_bigint::{self, BigUint};
-
-use crate::rational::{Rational, gcd};
+use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodeVec};
+use crate::rational_range::RationalRange;
+use generate_byznode_utils as GBU;
+use crate::byzantine::TransitiveConsts;
+use crate::rational::Rational;
 
 fn main() {
-    println!("{}", gcd(&BigUint::from(525 as u16), &BigUint::from(1325 as u16)));
+    let mut a = ByzNodeCoefficientAddVec::new();
 
-    let a= Rational::new(rational::Sign::Pos, BigUint::from(5 as u8), BigUint::from(8 as u8));
-    println!("a: {:?}", a);
+    let b = GBU::add(Rational::one(), vec![(Rational::one(), GBU::pow(GBU::transitive(TransitiveConsts::Pi), Rational::from(2)))]);
 
-    let b= Rational::new(rational::Sign::Neg, BigUint::from(7 as u8), BigUint::from(15 as u8));
-    println!("b: {:?}", b);
+    a.insert_single(GBU::pow(b, Rational::from(2)));
 
-    let mut c = a.clone();
-    c -= &b;
-    c *= &b;
+    a.insert((Rational::from(2), GBU::transitive(TransitiveConsts::Pi)));
+    a.insert((Rational::from(1), GBU::transitive(TransitiveConsts::Pi)));
 
-    println!("c: {:?}", c);
+    println!("{:?}", a);
+    println!();
+
+    println!("Range multiplication table");
+    let range_list = [RationalRange::from((2, 3)), RationalRange::from((-3, 3)), RationalRange::from((-3, -2))];
+
+    for x in &range_list {
+        for y in &range_list {
+            let mut xy = x.clone();
+            xy *= y;
+            println!("{:?}\t * {:?}\t = {:?}", x, y, xy);
+        }
+    }
 }

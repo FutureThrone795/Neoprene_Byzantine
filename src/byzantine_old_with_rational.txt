@@ -13,6 +13,9 @@ pub enum TransitiveConsts {
 }
 
 pub enum ByzNode {
+    Rational{
+        rational: Rational
+    },
     TransitiveConst{
         transitive_const: TransitiveConsts
     },
@@ -31,6 +34,9 @@ pub enum ByzNode {
 impl PartialEq for ByzNode {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
+            (ByzNode::Rational { rational }, ByzNode::Rational { rational: rational_other }) => {
+                return *rational == *rational_other;
+            },
             (ByzNode::TransitiveConst { transitive_const }, ByzNode::TransitiveConst { transitive_const: transitive_conts_other }) => {
                 return *transitive_const == *transitive_conts_other;
             },
@@ -61,6 +67,9 @@ impl PartialOrd for ByzNode {
 impl Ord for ByzNode {
     fn cmp(&self, other: &ByzNode) -> Ordering {
         match (self, other) {
+            (ByzNode::Rational { rational }, ByzNode::Rational { rational: rational_other }) => {
+                return rational.cmp(rational_other);
+            },
             (ByzNode::TransitiveConst { transitive_const }, ByzNode::TransitiveConst { transitive_const: transitive_const_other }) => {
                 return transitive_const.cmp(transitive_const_other);
             },
@@ -93,6 +102,9 @@ impl Ord for ByzNode {
 impl Debug for ByzNode {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> { 
         match self {
+            ByzNode::Rational { rational } => {
+                return write!(f, "{:?}", rational);
+            },
             ByzNode::TransitiveConst { transitive_const } => {
                 return write!(f, "{:?}", transitive_const);
             },
@@ -112,17 +124,20 @@ impl Debug for ByzNode {
 impl ByzNode {
     pub fn to_identifying_type_int(&self) -> usize {
         match self {
-            ByzNode::TransitiveConst { .. } => {
+            ByzNode::Rational { .. } => {
                 return 0;
-            }
-            ByzNode::Add { .. } => {
+            },
+            ByzNode::TransitiveConst { .. } => {
                 return 1;
             }
-            ByzNode::Mul { .. } => {
+            ByzNode::Add { .. } => {
                 return 2;
             }
-            ByzNode::Pow { .. } => {
+            ByzNode::Mul { .. } => {
                 return 3;
+            }
+            ByzNode::Pow { .. } => {
+                return 4;
             }
         }
     }

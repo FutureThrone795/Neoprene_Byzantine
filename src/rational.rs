@@ -152,8 +152,8 @@ impl Rational {
             panic!("Attempted to do powi with a pretty large exponent");
         }
 
-        self.numer.pow(u32_digits[0]);
-        self.denom.pow(u32_digits[0]);
+        self.numer = self.numer.pow(u32_digits[0]);
+        self.denom = self.denom.pow(u32_digits[0]);
 
         // No need to simplify, as if numer and denom are already simplified then their powers will also be
         // (Consider that their prime factorizations will still contain the same prime bases after the operation)

@@ -6,7 +6,7 @@ use crate::rational::Rational;
 use crate::byznode_sorted_vec::ByzNodeCoefficientAddVec;
 use crate::byznode_sorted_vec::ByzNodePowerMulVec;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub enum TransitiveConsts {
     Pi,
     Euler

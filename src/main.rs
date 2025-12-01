@@ -5,11 +5,13 @@ mod byznode_sorted_vec;
 mod generate_byznode_utils;
 mod neoprene;
 
+use num_bigint::BigUint;
+
+use crate::rational::Rational;
 use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodeVec};
 use crate::rational_range::RationalRange;
-use generate_byznode_utils as GBU;
+use crate::generate_byznode_utils as GBU;
 use crate::byzantine::TransitiveConsts;
-use crate::rational::Rational;
 
 fn main() {
     let mut a = ByzNodeCoefficientAddVec::new();
@@ -22,6 +24,7 @@ fn main() {
     a.insert((Rational::from(1), GBU::transitive(TransitiveConsts::Pi)));
 
     println!("{:?}", a);
+    println!("...which is within the range {:?}", neoprene::neoprene_add(&a, &BigUint::from(1 as u8)));
     println!();
 
     println!("Range multiplication table");

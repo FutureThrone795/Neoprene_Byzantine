@@ -4,6 +4,18 @@ use crate::byzantine::{ByzNode, TransitiveConsts};
 use crate::rational::{Rational, Sign};
 use crate::rational_range::{RationalRange, RationalRangeDescriptor, get_descriptor};
 use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodePowerMulVec, ByzNodeVec};
+use crate::neoprene_taylor;
+
+/// Panics when given a value that cannot fit in a u32
+fn biguint_to_u32(x: &BigUint) -> u32 {
+    let a = x.to_u32_digits();
+
+    if a.len() != 1 {
+        panic!("Attempted to run biguint_to_u32(..) on a BigUint that cannot be expressed as a u32");
+    }
+
+    return a[0];
+}
 
 pub fn neoprene_transitive(transitive_const: TransitiveConsts, newton_iterations: &BigUint) -> RationalRange {
     // These are perfectly accurate and do not need to be fixed later
@@ -15,7 +27,28 @@ pub fn neoprene_transitive(transitive_const: TransitiveConsts, newton_iterations
             }
         },
         TransitiveConsts::Euler => {
-            return RationalRange::from((2, 3));
+            // Using the taylor expansion of e^x evaluated at x=1, meaning this is just the sum of the inverses of the factorials up to k
+
+            let k = biguint_to_u32(newton_iterations);
+
+            let mut min = Rational::one();
+
+            // Note that addition of rationals is quite expensive, and there is definitely a way I can speed this up with the knowledge of how subsequent terms will add
+            for n in 2..(k+2) {
+                let mut a = neoprene_taylor::factorial(n);
+                a.invert();
+                min += &a; 
+            }
+
+            let mut max = min.clone();
+            let error = Rational {
+                sign: Sign::Pos,
+                numer: BigUint::from(3 as u8),
+                denom: neoprene_taylor::factorial_biguint(k+2)
+            };
+            max += &error;
+
+            return RationalRange { min, max }
         }
     }
 }
@@ -112,6 +145,10 @@ pub fn neoprene_rational_pow_raw(rational: &mut Rational, exp: &Rational, newton
         // If base is negative, exp.denom must be odd to have a real root
         panic!("Attempted to compute exact_rational_pow(..) in such a way that a complex number would be produced");
     }
+
+    let a: f64 = 0.5;
+    let b: f64 = 1.5;
+    let c: f64 = a.powf(b);
 
     if exp.is_int() {
         rational.powi(&exp.numer);

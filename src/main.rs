@@ -4,6 +4,7 @@ mod byzantine;
 mod byznode_sorted_vec;
 mod generate_byznode_utils;
 mod neoprene;
+mod neoprene_taylor;
 
 use num_bigint::BigUint;
 
@@ -16,15 +17,14 @@ use crate::byzantine::TransitiveConsts;
 fn main() {
     let mut a = ByzNodeCoefficientAddVec::new();
 
-    let b = GBU::add(Rational::one(), vec![(Rational::one(), GBU::pow(GBU::transitive(TransitiveConsts::Pi), Rational::from(2)))]);
+    let b = GBU::add(Rational::one(), vec![(Rational::one(), GBU::pow(GBU::transitive(TransitiveConsts::Euler), Rational::from(2)))]);
 
     a.insert_single(GBU::pow(b, Rational::from(2)));
 
-    a.insert((Rational::from(2), GBU::transitive(TransitiveConsts::Pi)));
-    a.insert((Rational::from(1), GBU::transitive(TransitiveConsts::Pi)));
+    a.insert((Rational::from(2), GBU::transitive(TransitiveConsts::Euler)));
 
     println!("{:?}", a);
-    println!("...which is within the range {:?}", neoprene::neoprene_add(&a, &BigUint::from(1 as u8)));
+    println!("...which is within the range {:?}", neoprene::neoprene_add(&a, &BigUint::from(10 as u8)));
     println!();
 
     println!("Range multiplication table");

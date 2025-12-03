@@ -9,7 +9,7 @@ pub fn factorial_biguint(x: u32) -> BigUint {
         return a;
     }
 
-    for i in 1..x {
+    for i in 2..(x+1) {
         a *= i;
     }
 

@@ -21,31 +21,74 @@ pub fn neoprene_transitive(transitive_const: TransitiveConsts, newton_iterations
     // These are perfectly accurate and do not need to be fixed later
     match transitive_const {
         TransitiveConsts::Pi => {
-            return RationalRange { 
-                min: Rational::new(Sign::Pos, BigUint::from(31 as u8), BigUint::from(10 as u8)), 
-                max: Rational::new(Sign::Pos, BigUint::from(16 as u8), BigUint::from(5 as u8))
+            // Using the Gregory-Leibniz series
+
+            let k = biguint_to_u32(newton_iterations);
+
+            let mut a = Rational::from(3);
+            let b: Rational;
+
+            for n in 1..(k+1) {
+                let mut c = BigUint::from(2*n);
+                c *= 2*n+1;
+                c *= 2*n+2;
+                let d = Rational {
+                    sign: if n%2 == 1 { Sign::Pos } else  { Sign::Neg },
+                    numer: BigUint::from(4 as u8),
+                    denom: c
+                };
+
+                a += &d;
             }
+
+            // Gregory-Leibniz alternates between an underapproximation and an overapproximation,
+            // So I need to use both the 2nd-to-last and the last value
+            b = a.clone();
+
+            let mut c = BigUint::from(2*k+2);
+            c *= 2*k+3;
+            c *= 2*k+4;
+            let d = Rational {
+                sign: if k%2 == 0 { Sign::Pos } else  { Sign::Neg },
+                numer: BigUint::from(4 as u8),
+                denom: c
+            };
+            a += &d;
+
+            // Gregory-Leibniz alternates between an underapproximation and an overapproximation,
+            // So which approximation is min or max depends on if k is odd or even
+            let min: Rational;
+            let max: Rational;
+            if k%2 == 1 {
+                min = a;
+                max = b;
+            } else {
+                min = b;
+                max = a;
+            }
+
+            return RationalRange { min, max };
         },
         TransitiveConsts::Euler => {
             // Using the taylor expansion of e^x evaluated at x=1, meaning this is just the sum of the inverses of the factorials up to k
 
             let k = biguint_to_u32(newton_iterations);
 
-            let mut min = Rational::one();
+            let mut min = Rational::from(2);
 
             // Note that addition of rationals is quite expensive, and there is definitely a way I can speed this up with the knowledge of how subsequent terms will add
-            for n in 2..(k+2) {
+            for n in 2..(k+3) {
                 let mut a = neoprene_taylor::factorial(n);
                 a.invert();
                 min += &a; 
             }
 
             let mut max = min.clone();
-            let error = Rational {
-                sign: Sign::Pos,
-                numer: BigUint::from(3 as u8),
-                denom: neoprene_taylor::factorial_biguint(k+2)
-            };
+            // Error term is given by e/(k+1)!
+            // I use the current approximation of e as the numerator, which seems to work just fine even if it results in an underestimate on the error term
+            let mut error = min.clone();
+            error.denom *= neoprene_taylor::factorial_biguint(k+3);
+            error.simplify();
             max += &error;
 
             return RationalRange { min, max }

@@ -7,6 +7,7 @@ mod neoprene;
 mod neoprene_taylor;
 mod neoprene_comp;
 
+/*
 use crate::neoprene_comp::neoprene_comp;
 use crate::rational::Rational;
 use crate::generate_byznode_utils as GBU;
@@ -38,3 +39,4 @@ fn main() {
         }
     }
 }
+*/

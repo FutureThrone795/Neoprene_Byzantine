@@ -7,6 +7,15 @@ mod neoprene;
 mod neoprene_taylor;
 mod neoprene_comp;
 
+pub use crate::rational::*;
+pub use crate::rational_range::*;
+pub use crate::byzantine::*;
+pub use byznode_sorted_vec::*;
+pub use generate_byznode_utils::*;
+pub use neoprene::*;
+pub use neoprene_taylor::*;
+pub use neoprene_comp::*;
+
 /*
 use crate::neoprene_comp::neoprene_comp;
 use crate::rational::Rational;

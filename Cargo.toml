@@ -1,6 +1,9 @@
 [package]
 name = "Neoprene_Byzantine"
 version = "0.1.0"
+description = "This crate has two parts, Neoprene and Byzantine. Byzantine stores an equation and Neoprene computes and compares those equations with interval arithmetic on rationals."
+license = "MIT"
+repository = "https://github.com/FutureThrone795/Neoprene_Byzantine.git"
 edition = "2024"
 
 [dependencies]

@@ -1,6 +1,6 @@
 use num_bigint::BigUint;
 use crate::rational::{Rational, Sign};
-use crate::rational_range::{RationalRange, RationalRangeDescriptor, get_descriptor};
+use crate::rational_range::{RationalRange, RationalRangeDescriptor};
 
 /// Panics when given a value that cannot fit in a u32
 fn biguint_to_u32(x: &BigUint) -> u32 {
@@ -24,8 +24,8 @@ fn rational_range_midpoint(x: &RationalRange) -> Rational {
 }
 
 /// Using the Gregory-Leibniz series
-pub fn compute_pi(newton_iterations: &BigUint) -> RationalRange {
-    let k = biguint_to_u32(newton_iterations);
+pub fn compute_pi(newton_iterations: &BigUint, limit_denom: &BigUint) -> RationalRange {
+    let k = biguint_to_u32(newton_iterations) * 8;
 
     let mut a = Rational::from(3);
     let b: Rational;
@@ -69,11 +69,13 @@ pub fn compute_pi(newton_iterations: &BigUint) -> RationalRange {
         max = a;
     }
 
-    return RationalRange { min, max };
+    let mut range = RationalRange::from((min, max));
+    range.to_with_denominator(limit_denom);
+    return range;
 }
 
 /// Using the taylor expansion of e^x evaluated at x=1, meaning this is just the sum of the inverses of the factorials up to k
-pub fn compute_euler(newton_iterations: &BigUint) -> RationalRange {
+pub fn compute_euler(newton_iterations: &BigUint, limit_denom: &BigUint) -> RationalRange {
     let k = biguint_to_u32(newton_iterations);
 
     let mut min = Rational::from(2);
@@ -93,7 +95,9 @@ pub fn compute_euler(newton_iterations: &BigUint) -> RationalRange {
     error.simplify();
     max += &error;
 
-    return RationalRange::from((min, max));
+    let mut range = RationalRange::from((min, max));
+    range.to_with_denominator(limit_denom);
+    return range;
 }
 
 pub fn factorial_biguint(x: u32) -> BigUint {
@@ -141,7 +145,7 @@ fn initial_root_bounds(base: &Rational, root: &BigUint) -> RationalRange {
 
 /// Using Newton's method of computing principal roots
 /// The function we're solving is 0 = (output)^(root) - base
-fn nth_root(base: &Rational, root: &BigUint, newton_iterations: &BigUint) -> RationalRange {
+fn nth_root(base: &Rational, root: &BigUint, newton_iterations: &BigUint, limit_denom: &BigUint) -> RationalRange {
     let mut current_guess = initial_root_bounds(base, root);
 
     let k = biguint_to_u32(newton_iterations);
@@ -180,14 +184,16 @@ fn nth_root(base: &Rational, root: &BigUint, newton_iterations: &BigUint) -> Rat
         new_guess_max -= &f_midpoint_div_derivative_interval.min;
 
         current_guess = RationalRange::from((new_guess_min, new_guess_max));
+
+        current_guess.to_with_denominator(limit_denom);
     }
     
     return current_guess;
 }
 
-fn nth_root_range(base: &RationalRange, root: &BigUint, newton_iterations: &BigUint) -> RationalRange {
-    let base_min_range = nth_root(&base.min, root, newton_iterations);
-    let base_max_range = nth_root(&base.min, root, newton_iterations);
+fn nth_root_range(base: &RationalRange, root: &BigUint, newton_iterations: &BigUint, limit_denom: &BigUint) -> RationalRange {
+    let base_min_range = nth_root(&base.min, root, newton_iterations, limit_denom);
+    let base_max_range = nth_root(&base.min, root, newton_iterations, limit_denom);
 
     if base_min_range.min > base_max_range.max {
         return RationalRange::from((base_min_range.max, base_max_range.min));
@@ -196,7 +202,7 @@ fn nth_root_range(base: &RationalRange, root: &BigUint, newton_iterations: &BigU
     }
 }
 
-pub fn rational_range_pow(base: &RationalRange, exp: &Rational, newton_iterations: &BigUint) -> RationalRange {
+pub fn rational_range_pow(base: &RationalRange, exp: &Rational, newton_iterations: &BigUint, limit_denom: &BigUint) -> RationalRange {
     if !exp.is_simplified() {
         panic!("Attempted to compute rational_range_pow(..) with an unsimplified exp");
     }
@@ -219,8 +225,8 @@ pub fn rational_range_pow(base: &RationalRange, exp: &Rational, newton_iteration
     a.min.powi(&exp.numer);
     a.max.powi(&exp.numer);
 
-    let mut pow_range = nth_root_range(&a, &exp.denom, newton_iterations);
-    match get_descriptor(&a) {
+    let mut pow_range = nth_root_range(&a, &exp.denom, newton_iterations, limit_denom);
+    match a.descriptor() {
         RationalRangeDescriptor::OverlapZero => {
             if !pow_range.min.is_negative() && !pow_range.max.is_negative() {
                 // Consider (-1..2)^2, which can range between (0..4)
@@ -228,6 +234,10 @@ pub fn rational_range_pow(base: &RationalRange, exp: &Rational, newton_iteration
             }
         },
         _ => ()
+    }
+
+    if exp.is_negative() {
+        pow_range.reciprocate();
     }
 
     return pow_range;

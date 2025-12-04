@@ -1,6 +1,8 @@
 use std::ops::{AddAssign, MulAssign};
 use std::fmt::{Debug, Formatter};
 
+use num_bigint::BigUint;
+
 use crate::rational::Rational;
 
 #[derive(Clone)]
@@ -9,9 +11,55 @@ pub struct RationalRange {
     pub max: Rational
 }
 
+pub enum RationalRangeDescriptor {
+    BothPos,
+    BothNeg,
+    OverlapZero
+}
+use RationalRangeDescriptor::{BothPos, BothNeg, OverlapZero};
+
+impl RationalRange {
+    pub fn to_with_denominator(&mut self, new_denom: &BigUint) {
+        self.min.to_with_denominator(new_denom, false);
+        self.max.to_with_denominator(new_denom, false);
+    }
+
+    pub fn descriptor(&self) -> RationalRangeDescriptor {
+        match (self.min.is_negative(), self.max.is_negative()) {
+            (false, false) => {
+                return BothPos;
+            },
+            (true, true) => {
+                return BothNeg;
+            }
+            (true, false) => {
+                return OverlapZero;
+            }
+            (false, true) => {
+                panic!("While getting the descriptor of a RationalRange, the min was larger than the maximum");
+            }
+        }
+    }
+
+    pub fn reciprocate(&mut self) {
+        match self.descriptor() {
+            OverlapZero => {
+                panic!("Tried to get the reciprocal of a rational range that overlaps zero");
+            },
+            _ => {
+                self.min.invert();
+                self.max.invert();
+                // a > b implies (1/a) < (1/b)
+                std::mem::swap(&mut self.min, &mut self.max);
+            }
+        }
+    }
+}
+
 impl Debug for RationalRange {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> { 
-        return write!(f, "[{:?} -> {:?}]", self.min, self.max); 
+        //return write!(f, "[{:?} -> {:?}]", self.min, self.max); 
+        return write!(f, "[{:?} -> {:?}] f64 [{} -> {}]", self.min, self.max, self.min.to_float(), self.max.to_float()); 
     }
 }
 
@@ -42,30 +90,6 @@ impl From<(Rational, Rational)> for RationalRange {
     }
 }
 
-pub enum RationalRangeDescriptor {
-    BothPos,
-    BothNeg,
-    OverlapZero
-}
-use RationalRangeDescriptor::{BothPos, BothNeg, OverlapZero};
-
-pub fn get_descriptor(range: &RationalRange) -> RationalRangeDescriptor {
-    match (range.min.is_negative(), range.max.is_negative()) {
-        (false, false) => {
-            return BothPos;
-        },
-        (true, true) => {
-            return BothNeg;
-        }
-        (true, false) => {
-            return OverlapZero;
-        }
-        (false, true) => {
-            panic!("While getting the descriptor of a RationalRange, the min was larger than the maximum");
-        }
-    }
-}
-
 impl AddAssign<&RationalRange> for RationalRange {
     fn add_assign(&mut self, rhs: &RationalRange) { 
         self.min += &rhs.min;
@@ -75,7 +99,7 @@ impl AddAssign<&RationalRange> for RationalRange {
 
 impl MulAssign<&RationalRange> for RationalRange {
     fn mul_assign(&mut self, rhs: &RationalRange) {
-        match (get_descriptor(self), get_descriptor(rhs)) {
+        match (self.descriptor(), rhs.descriptor()) {
             (BothPos, BothPos) => {
                 self.min *= &rhs.min;
                 self.max *= &rhs.max;

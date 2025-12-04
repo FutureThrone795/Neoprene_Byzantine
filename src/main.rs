@@ -13,7 +13,7 @@ use crate::neoprene_comp::neoprene_comp;
 use crate::rational::{Rational, Sign};
 use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodePowerMulVec, ByzNodeVec};
 use crate::rational_range::RationalRange;
-use crate::generate_byznode_utils::{self as GBU, pow};
+use crate::generate_byznode_utils as GBU;
 use crate::byzantine::TransitiveConsts;
 
 fn main() {
@@ -29,6 +29,7 @@ fn main() {
 
     println!("a = {:?}", a);
     println!("b = {:?}", b);
+    println!();
 
     let cmp = neoprene_comp(&a, &b, &(12 as u8).into());
 

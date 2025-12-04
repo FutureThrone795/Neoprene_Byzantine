@@ -26,7 +26,7 @@ pub fn gcd(a_r: &BigUint,  b_r: &BigUint) -> BigUint {
     return a;
 }
 
-pub fn lcd(a_r: &BigUint, b_r: &BigUint) -> BigUint {
+pub fn lcm(a_r: &BigUint, b_r: &BigUint) -> BigUint {
     if *a_r==*b_r {
         return a_r.clone();
     }
@@ -172,6 +172,31 @@ impl Rational {
         // (Consider that their prime factorizations will still contain the same prime bases after the operation)
     }
 
+    /// Forces the denominator into a set value and modifies the numerator to have the closest value to the initial value
+    /// When round_up is false, it will round down
+    pub fn to_with_denominator(&mut self, new_denom: &BigUint, round_up: bool) {
+        let mut new_mod_old = new_denom.clone();
+        new_mod_old %= &self.denom;
+        let mut new_div_old = new_denom.clone();
+        new_div_old /= &self.denom;
+
+        // At this point I start playing with my values so the names don't really match
+        new_div_old *= &self.numer;
+        new_mod_old *= &self.numer;
+        new_mod_old /= &self.denom;
+
+        self.numer = new_div_old;
+        self.numer += &new_mod_old;
+
+        // This could account for when the fraction is already an exact representation of the previous value but I think detecting that
+        // Would be worse for performance than just adding one whenever
+        if round_up {
+            self.numer += 1 as u8;
+        }
+
+        self.denom = new_denom.clone();
+    }
+
     pub fn is_simplified(&self) -> bool {
         return gcd(&self.numer, &self.denom) == BigUint::from(1 as u8);
     }
@@ -194,6 +219,22 @@ impl Rational {
 
     pub fn is_int_assume_simplified(&self) -> bool {
         return self.denom == BigUint::from(1 as u8);
+    }
+
+    /// This function is highly lossy and should absolutely never be used for any reason in Neoprene or Byzantine code
+    /// (I only use it to easily see a numerical value for a rational with large numbers)
+    pub fn to_float(&self) -> f64 {
+        let mut a = self.numer.clone();
+        a *= 2_u32.pow(20);
+        a /= &self.denom;
+
+        let mut b = 0.0_f64;
+        let a = a.to_u64_digits();
+        for (i, a) in a.iter().enumerate() {
+            b += (*a as f64) * (2_u32.pow(i as u32) as f64);
+        }
+
+        return b / (2_u32.pow(20) as f64);
     }
 }
 
@@ -218,10 +259,10 @@ impl Debug for Rational {
 
 impl AddAssign<&Rational> for Rational {
     fn add_assign(&mut self, rhs: &Rational) { 
-        let denom_lcd = lcd(&self.denom, &rhs.denom);
+        let denom_lcm = lcm(&self.denom, &rhs.denom);
 
-        let self_factor = denom_lcd.clone() / &self.denom;
-        let rhs_factor = denom_lcd / &rhs.denom;
+        let self_factor = denom_lcm.clone() / &self.denom;
+        let rhs_factor = denom_lcm / &rhs.denom;
 
         self.numer *= &self_factor;
         self.denom *= &self_factor;
@@ -258,10 +299,10 @@ impl AddAssign<&Rational> for Rational {
 
 impl SubAssign<&Rational> for Rational {
     fn sub_assign(&mut self, rhs: &Rational) { 
-        let denom_lcd = lcd(&self.denom, &rhs.denom);
+        let denom_lcm = lcm(&self.denom, &rhs.denom);
 
-        let self_factor = denom_lcd.clone() / &self.denom;
-        let rhs_factor = denom_lcd / &rhs.denom;
+        let self_factor = denom_lcm.clone() / &self.denom;
+        let rhs_factor = denom_lcm / &rhs.denom;
 
         self.numer *= &self_factor;
         self.denom *= &self_factor;
@@ -331,17 +372,14 @@ impl PartialEq for Rational {
             return true;
         }
 
-        let denom_lcd = lcd(&self.denom, &other.denom);
+        let denom_lcm = lcm(&self.denom, &other.denom);
 
-        let mut a = denom_lcd.clone() / &self.denom;
+        let mut a = denom_lcm.clone() / &self.denom;
         a *= &self.numer;
-        let mut b = denom_lcd / &other.denom;
+        let mut b = denom_lcm / &other.denom;
         b *= &other.numer;
 
         return a == b;
-    }
-    fn ne(&self, other: &Self) -> bool {
-        return !self.eq(other);
     }
 }
 
@@ -373,11 +411,11 @@ impl Ord for Rational {
             return Ordering::Equal;
         }
 
-        let denom_lcd = lcd(&self.denom, &other.denom);
+        let denom_lcm = lcm(&self.denom, &other.denom);
 
-        let mut a = denom_lcd.clone() / &self.denom;
+        let mut a = denom_lcm.clone() / &self.denom;
         a *= &self.numer;
-        let mut b = denom_lcd / &other.denom;
+        let mut b = denom_lcm / &other.denom;
         b *= &other.numer;
 
         if a == b {

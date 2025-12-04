@@ -1,8 +1,8 @@
 use num_bigint::BigUint;
 
 use crate::byzantine::{ByzNode, TransitiveConsts};
-use crate::rational::{Rational, Sign};
-use crate::rational_range::{RationalRange, RationalRangeDescriptor};
+use crate::rational::Rational;
+use crate::rational_range::RationalRange;
 use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodePowerMulVec, ByzNodeVec};
 use crate::neoprene_taylor;
 

@@ -7,12 +7,8 @@ mod neoprene;
 mod neoprene_taylor;
 mod neoprene_comp;
 
-use num_bigint::BigUint;
-
 use crate::neoprene_comp::neoprene_comp;
-use crate::rational::{Rational, Sign};
-use crate::byznode_sorted_vec::{ByzNodeCoefficientAddVec, ByzNodePowerMulVec, ByzNodeVec};
-use crate::rational_range::RationalRange;
+use crate::rational::Rational;
 use crate::generate_byznode_utils as GBU;
 use crate::byzantine::TransitiveConsts;
 

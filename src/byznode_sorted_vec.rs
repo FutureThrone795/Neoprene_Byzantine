@@ -261,7 +261,7 @@ impl Debug for ByzNodePowerMulVec {
         let vec = self.get_vec();
 
         if !rat.is_one() {
-            a.push_str(format!("{:?} + ", {rat}).as_str());
+            a.push_str(format!("{:?} * ", {rat}).as_str());
         }
         
         for i in 0..vec.len() {

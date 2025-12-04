@@ -146,10 +146,23 @@ impl Rational {
     }
 
     pub fn powi(&mut self, exp: &BigUint) {
+        if *exp == BigUint::ZERO {
+            *self = Rational::one();
+            return;
+        }
+
+        if *exp == BigUint::from(1 as u8) {
+            return;
+        }
+
         let u32_digits = exp.to_u32_digits();
 
-        if u32_digits.len() != 1 || *exp > BigUint::from(4 as u8) {
+        if u32_digits.len() != 1 || *exp > BigUint::from(12 as u8) {
             panic!("Attempted to do powi with a pretty large exponent");
+        }
+
+        if exp % BigUint::from(2 as u8) == BigUint::ZERO {
+            self.sign = Sign::Pos;
         }
 
         self.numer = self.numer.pow(u32_digits[0]);
@@ -199,7 +212,7 @@ impl Debug for Rational {
         if self.denom == BigUint::from(1 as u8) {
             return write!(f, "{}{}", a, self.numer);
         }
-        return write!(f, "{}{}/{}", a, self.numer, self.denom);
+        return write!(f, "({}{}/{})", a, self.numer, self.denom);
     }
 }
 
@@ -318,7 +331,7 @@ impl PartialEq for Rational {
             return true;
         }
 
-        let denom_lcd = gcd(&self.denom, &other.denom);
+        let denom_lcd = lcd(&self.denom, &other.denom);
 
         let mut a = denom_lcd.clone() / &self.denom;
         a *= &self.numer;
@@ -342,7 +355,7 @@ impl PartialOrd for Rational {
 
 impl Ord for Rational {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.numer == BigUint::ZERO && other.denom == BigUint::ZERO {
+        if self.numer == BigUint::ZERO && other.numer == BigUint::ZERO {
             // Both are zero
             return Ordering::Equal;
         }
@@ -360,7 +373,7 @@ impl Ord for Rational {
             return Ordering::Equal;
         }
 
-        let denom_lcd = gcd(&self.denom, &other.denom);
+        let denom_lcd = lcd(&self.denom, &other.denom);
 
         let mut a = denom_lcd.clone() / &self.denom;
         a *= &self.numer;
@@ -387,6 +400,16 @@ impl From<isize> for Rational {
             sign: if i.is_positive() { Sign::Pos } else { Sign::Neg }, 
             numer: BigUint::from(i.unsigned_abs()), 
             denom: BigUint::from(1 as u8) 
+        } 
+    }
+}
+
+impl From<(isize, isize)> for Rational {
+    fn from(i: (isize, isize)) -> Rational { 
+        return Rational { 
+            sign: if i.0.is_positive() ^ i.1.is_positive() { Sign::Neg } else { Sign::Pos }, 
+            numer: BigUint::from(i.0.unsigned_abs()), 
+            denom: BigUint::from(i.1.unsigned_abs()) 
         } 
     }
 }

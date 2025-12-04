@@ -28,6 +28,20 @@ impl From<(isize, isize)> for RationalRange {
     }
 }
 
+impl From<(Rational, Rational)> for RationalRange {
+    fn from(i: (Rational, Rational)) -> RationalRange { 
+        if i.0 > i.1 {
+            println!("{:?} {:?}", i.0, i.1);
+            panic!("Attempted to create RationalRange with min > max");
+        }
+        
+        return RationalRange { 
+            min: i.0, 
+            max: i.1
+        } 
+    }
+}
+
 pub enum RationalRangeDescriptor {
     BothPos,
     BothNeg,

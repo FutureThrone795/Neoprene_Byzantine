@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 use crate::byzantine::ByzNode;
 use crate::rational::Rational;
 
-/// Know which type best fits your situation for storing an arbitrary equation. Store one of these instead of a ByzNode::Add or a ByzNode::Mul
+/// Know which type best fits your situation for storing an arbitrary equation.
 pub trait ByzNodeVec {
     fn insert_single(&mut self, item: ByzNode) {
         self.insert((Rational::from(1), item));
@@ -208,6 +208,23 @@ impl Debug for ByzNodeCoefficientAddVec {
     }
 }
 
+impl ByzNodeCoefficientAddVec {
+    pub fn deep_clone(&self) -> ByzNodeCoefficientAddVec {
+        return ByzNodeCoefficientAddVec { 
+            rational_part: self.rational_part.clone(), 
+            vec: self.vec.iter().map(|x| (x.0.clone(), Rc::new(x.1.deep_clone()))).collect()
+        }
+    }
+
+    pub fn combine(&mut self, other: &ByzNodeCoefficientAddVec) {
+        self.rational_part += &other.rational_part;
+
+        for i in &other.vec {
+            self.insert((i.0.clone(), (*i.1).deep_clone()));
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation for ByzNodePowerMulVec
 ////////////////////////////////////////////////////////////////////////////////
@@ -278,5 +295,22 @@ impl Debug for ByzNodePowerMulVec {
         }
 
         return write!(f, "{}", a);
+    }
+}
+
+impl ByzNodePowerMulVec {
+    pub fn deep_clone(&self) -> ByzNodePowerMulVec {
+        return ByzNodePowerMulVec { 
+            rational_part: self.rational_part.clone(), 
+            vec: self.vec.iter().map(|x| (x.0.clone(), Rc::new(x.1.deep_clone()))).collect()
+        }
+    }
+
+    pub fn combine(&mut self, other: &ByzNodePowerMulVec) {
+        self.rational_part += &other.rational_part;
+
+        for i in &other.vec {
+            self.insert((i.0.clone(), (*i.1).deep_clone()));
+        }
     }
 }

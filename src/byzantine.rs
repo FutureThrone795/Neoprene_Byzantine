@@ -145,4 +145,24 @@ impl ByzNode {
     pub fn basic_type_eq(&self, other: &ByzNode) -> bool {
         return self.to_identifying_type_int() == other.to_identifying_type_int();
     }
+
+    pub fn deep_clone(&self) -> ByzNode {
+        match self {
+            ByzNode::Rational { rational } => {
+                return ByzNode::Rational { rational: rational.clone() };
+            },
+            ByzNode::TransitiveConst { transitive_const } => {
+                return ByzNode::TransitiveConst { transitive_const: transitive_const.clone() };
+            },
+            ByzNode::Add { addends } => {
+                return ByzNode::Add { addends: addends.deep_clone() };
+            },
+            ByzNode::Mul { products } => {
+                return ByzNode::Mul { products: products.deep_clone() };
+            },
+            ByzNode::Pow { base, exp } => {
+                return ByzNode::Pow { base: Rc::new(base.deep_clone()), exp: exp.clone() };
+            }
+        }
+    }
 }
